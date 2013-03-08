@@ -1,6 +1,6 @@
 class GormInterceptorsGrailsPlugin {
     // the plugin version
-    def version = "0.0.1-SNAPSHOT"
+    def version = "0.0.2-SNAPSHOT"
     // the version or versions of Grails the plugin is designed for
     def grailsVersion = "1.3.7 > *"
     // the other plugins this plugin depends on
@@ -37,7 +37,7 @@ class GormInterceptorsGrailsPlugin {
                 def matcher = interceptorNamePattern.matcher(methodName)
                 if (matcher.matches()) {
                     if (!gormMethodsInitialized) {
-                        clazz.read(-1)
+                        clazz.count()
                         gormMethodsInitialized = true
                     }
                     

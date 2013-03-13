@@ -42,12 +42,13 @@ forms are available:
 
 * performing an action not being interested in Gorm method's parameters:
 
+```groovy
     void gormBeforeXXX() {
       // do something
     }
-
-
+```
 * performing an action depending on Gorm method's parameters:
+
 
     // args is an instance of Object[]
     void gormBeforeXXX(args) {
@@ -57,11 +58,15 @@ forms are available:
 * performing an action and returning a value that might be returned to the
 method caller:
 
+
     def gormBeforeXXX() {
       // do something
     }
 
+
 or
+
+
     // args is an instance of Object[]
     def gormBeforeXXX(args) {
       // do something

@@ -6,12 +6,12 @@ grails.project.dependency.resolution = {
 	log 'warn'
 
 	repositories {
-		grailsPlugins()
-		grailsHome()
 		grailsCentral()
 	}
 
 	plugins {
-		test 'org.grails.plugins:spock:0.5-groovy-1.7'
+		test ':spock:0.7', {
+			export = false
+		}
 	}
 }

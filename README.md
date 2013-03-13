@@ -49,29 +49,30 @@ forms are available:
 ```
 * performing an action depending on Gorm method's parameters:
 
-
+```groovy
     // args is an instance of Object[]
     void gormBeforeXXX(args) {
       // do something
     }
+```
 
 * performing an action and returning a value that might be returned to the
 method caller:
 
-
+```groovy
     def gormBeforeXXX() {
       // do something
     }
-
+```
 
 or
 
-
+```groovy
     // args is an instance of Object[]
     def gormBeforeXXX(args) {
       // do something
     }
-
+```
 
 gormDoXXX
 =========
@@ -79,19 +80,22 @@ gormDoXXX
 It is optional and if declared, controls if the interecepted method will be 
 invoked at all. Two declaration forms are possible:
 
+```groovy
     boolean gormDoDelete() {
        // return true if the intercepted method 
        // should be invoked
     }
+```
 
 or
 
+```groovy
     // args is an instance of Object[]
     boolean gormDoDelete(args) {
        // return true if the intercepted method 
        // should be invoked
     }
-
+```
 
 gormAfterXXX
 ============
@@ -102,23 +106,29 @@ intercepted method has completed. The following scenarios are supported:
 * perform some action not being interested in Gorm method's parameters and
 the return value:
 
+```groovy
     void gormAfterDelete() {
       // perform some action
     }
+```
 
 * perform some action depending on Gorm method's parameters and
 the return value:
 
+```groovy
     // args is an instance of Object[]
     // result is an instance of Object, returned by the intercepted method
     void gormAfterDelete(args, result) {
       // perform some action
     }
+```
 
 * replace the returned value with somthing else:
 
+```groovy
     // args is an instance of Object[]
     // result is an instance of Object, returned by the intercepted method
     static def gormAfterGet(args, result) {
       // replace result with something else
     }
+```

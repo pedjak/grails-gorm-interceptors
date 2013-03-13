@@ -2,7 +2,7 @@ class GormInterceptorsGrailsPlugin {
     // the plugin version
     def version = "0.0.2-SNAPSHOT"
     // the version or versions of Grails the plugin is designed for
-    def grailsVersion = "1.3.7 > *"
+    def grailsVersion = "1.2 > *"
     // the other plugins this plugin depends on
     def dependsOn = [:]
     
@@ -15,7 +15,10 @@ class GormInterceptorsGrailsPlugin {
             "test/**"
     ]
 
-    // TODO Fill in these fields
+    def scm = [url: "http://github.com/pedjak/grails-gorm-interceptors"]
+    def documentation = "http://github.com/pedjak/grails-gorm-interceptors"
+    def licence = "APACHE"
+
     def author = "Predrag Knezevic"
     def authorEmail = "pedjak@gmail.com"
     def title = "Interceptors for GORM methods (excluding queries)"

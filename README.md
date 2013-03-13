@@ -1,5 +1,4 @@
-Motivation
-==========
+# Motivation
 
 There are cases when you would like to intercept calls to a Gorm method, in
 order to perform additional actions just right before or after, or even to
@@ -19,8 +18,7 @@ trasaction that has triggered the interceptor at the first place. In case
 that the transaction needs to be rolled back, the changes done in the new
 session could be eventually persisted.
 
-Usage
-=====
+# Usage
 
 Intercepting a Gorm method is controlled via three additional methods
 declared on a domain class:
@@ -34,8 +32,7 @@ where XXX is the name of the Gorm method we wish to intercept.
 If we need to intercept a static Gorm method, then the interceptor methods 
 must be declared as static as well.
 
-gormBeforeXXX
-=============
+## gormBeforeXXX
 
 It executes the given code before the Gorm method is invoked. The following 
 forms are available:
@@ -47,6 +44,7 @@ forms are available:
       // do something
     }
 ```
+
 * performing an action depending on Gorm method's parameters:
 
 ```groovy
@@ -74,8 +72,7 @@ or
     }
 ```
 
-gormDoXXX
-=========
+## gormDoXXX
 
 It is optional and if declared, controls if the interecepted method will be 
 invoked at all. Two declaration forms are possible:
@@ -97,8 +94,7 @@ or
     }
 ```
 
-gormAfterXXX
-============
+## gormAfterXXX
 
 This interceptor is optional and if defined, executes the code after the
 intercepted method has completed. The following scenarios are supported:

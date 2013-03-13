@@ -1,3 +1,5 @@
+import grails.util.Metadata
+
 class GormInterceptorsGrailsPlugin {
     def version = "0.0.2-SNAPSHOT"
     def grailsVersion = "1.2 > *"
@@ -21,7 +23,7 @@ class GormInterceptorsGrailsPlugin {
         def plugin = delegate
         application.domainClasses.each { dc ->
             def clazz = dc.clazz
-            boolean gormMethodsInitialized = false
+            boolean gormMethodsInitialized = !Metadata.current.getGrailsVersion().startsWith('1.')
             def mc = clazz.metaClass
             def interceptedMethods = []
 

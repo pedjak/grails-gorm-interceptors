@@ -17,5 +17,9 @@ grails.project.dependency.resolution = {
 		test ':spock:0.7', {
 			export = false
 		}
+
+		runtime ":hibernate:$grailsVersion", {
+			export = false
+		}
 	}
 }

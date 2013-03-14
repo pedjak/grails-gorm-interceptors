@@ -7,13 +7,13 @@ prevent executing it.
 The already existing Gorm approach to declare beforeXXX or afterXXX (XXX
 == a Gorm method) methods or closures does not help in cases when interceptor
 logic needs to execute queries or update/persist/delete additional objects
-because the interceptor is executed at session's flush happening 
+because the interceptor is executed at session's flush happening
 usually at the session end. This might be problematic, if you need to:
 
 * Execute queries, you need to do this in a new session - all
 created/modified objects will be invisible or having old values.
 
-* Modify DB state - you need to do it in a new session, outside 
+* Modify DB state - you need to do it in a new session, outside
 trasaction that has triggered the interceptor at the first place. In case
 that the transaction needs to be rolled back, the changes done in the new
 session could be eventually persisted.
@@ -27,14 +27,14 @@ declared on a domain class:
 * gormAfterXXX
 * gormDoXXX
 
-where XXX is the name of the Gorm method we wish to intercept. 
+where XXX is the name of the Gorm method we wish to intercept.
 
-If we need to intercept a static Gorm method, then the interceptor methods 
+If we need to intercept a static Gorm method, then the interceptor methods
 must be declared as static as well.
 
 ## gormBeforeXXX
 
-It executes the given code before the Gorm method is invoked. The following 
+It executes the given code before the Gorm method is invoked. The following
 forms are available:
 
 * performing an action not being interested in Gorm method's parameters:
@@ -74,12 +74,12 @@ or
 
 ## gormDoXXX
 
-It is optional and if declared, controls if the interecepted method will be 
+It is optional and if declared, controls if the interecepted method will be
 invoked at all. Two declaration forms are possible:
 
 ```groovy
     boolean gormDoDelete() {
-       // return true if the intercepted method 
+       // return true if the intercepted method
        // should be invoked
     }
 ```
@@ -89,7 +89,7 @@ or
 ```groovy
     // args is an instance of Object[]
     boolean gormDoDelete(args) {
-       // return true if the intercepted method 
+       // return true if the intercepted method
        // should be invoked
     }
 ```

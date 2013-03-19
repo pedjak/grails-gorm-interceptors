@@ -20,7 +20,6 @@ class GormInterceptorsGrailsPlugin {
     private interceptorNamePattern = ~/gorm(Before|After)(.+)/
 
     def doWithApplicationContext = { ctx ->
-        def plugin = delegate
         application.domainClasses.each { dc ->
             def clazz = dc.clazz
             boolean gormMethodsInitialized = !Metadata.current.getGrailsVersion().startsWith('1.')
@@ -49,56 +48,49 @@ class GormInterceptorsGrailsPlugin {
 
                     // find all gorm methods
                     mc.methods.findAll { it.name == gormMethodName }.each { gm ->
-                        mc.'static'."${gm.name}" = interceptMethod(gm, beforeInvokeMethod, afterInvokeMethod, doInvokeMethod)
+                        mc.'static'."$gm.name" = interceptMethod(gm, beforeInvokeMethod, afterInvokeMethod, doInvokeMethod)
                     }
                 }
             }
         }
     }
 
-    private interceptMethod(method, beforeInvoke, afterInvoke, doInvoke) {
-        def paramTypes = method.nativeParameterTypes
-        def w = new StringWriter()
+    private Closure interceptMethod(method, beforeInvoke, afterInvoke, doInvoke) {
 
-        // create closure
-        w << '{ '
-        int i = 0
-        w << paramTypes.collect { "${it.name} a${i++}" }.join(', ')
-        i = 0
-        w << """ ->
-def result
-def args = ${'[' + paramTypes.collect { "a${i++}" }.join(', ') + '] as Object[]'}
-"""
-        if (beforeInvoke) {
-            w << """
+        new Closure(this) {
 
-    result = beforeInvoke.invoke(delegate, beforeInvoke.nativeParameterTypes.size() > 0 ? [args] as Object[] : null)
+            Class[] getParameterTypes() {
+                method.nativeParameterTypes
+            }
 
-"""
+            int getMaximumNumberOfParameters() {
+                method.nativeParameterTypes ? method.nativeParameterTypes.size() : 0
+            }
+
+            def call(Object... args) {
+                def result
+
+                if (beforeInvoke) {
+                    result = beforeInvoke.invoke(delegate, beforeInvoke.nativeParameterTypes ? [args] as Object[] : null)
+                }
+
+                if (doInvoke) {
+                    def invokeResult = doInvoke.invoke(delegate, doInvoke.nativeParameterTypes ? [args] as Object[] : null)
+                    if (invokeResult) {
+                        result = method.invoke(delegate, args)
+                    }
+                }
+                else {
+                    result = method.invoke(delegate, args)
+                }
+
+                if (afterInvoke) {
+                    def resultAfterInvoke = afterInvoke.invoke(delegate, afterInvoke.nativeParameterTypes ? [args, result] as Object[] : null)
+                    if (afterInvoke.returnType != Void.TYPE) result = resultAfterInvoke
+                }
+
+                result
+            }
         }
-        if (doInvoke) {
-            w << """
-    def invokeMethod = doInvoke.invoke(delegate, doInvoke.nativeParameterTypes.size() > 0 ? [args] as Object[] : null)
-    if (invokeMethod) {
-      result = method.invoke(delegate, args)
-    }
-"""
-        } else {
-        w << """
-result = method.invoke(delegate, args)
-"""
-        }
-        if (afterInvoke) {
-            w << """
-
-def resultAfterInvoke = afterInvoke.invoke(delegate, afterInvoke.nativeParameterTypes.size() > 0 ? [args, result] as Object[] : null)
-if (afterInvoke.returnType != Void.TYPE) result = resultAfterInvoke
-"""
-        }
-        w << """
-            result
-}
-"""
-        new GroovyShell(new Binding([beforeInvoke: beforeInvoke, afterInvoke: afterInvoke, doInvoke: doInvoke, method: method])).evaluate(w.toString())
     }
 }

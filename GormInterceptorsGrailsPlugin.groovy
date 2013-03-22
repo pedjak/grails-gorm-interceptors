@@ -1,4 +1,9 @@
 import grails.util.Metadata
+import javassist.ClassPool
+import javassist.CtField
+import javassist.CtMethod
+import javassist.CtConstructor
+import javassist.CtClass
 
 class GormInterceptorsGrailsPlugin {
     def version = "0.0.2-SNAPSHOT"
@@ -18,7 +23,11 @@ class GormInterceptorsGrailsPlugin {
     def description = 'Interceptors for GORM methods (excluding queries)'
 
     private interceptorNamePattern = ~/gorm(Before|After)(.+)/
-
+    private static final def classPool = ClassPool.default
+    private static final def OBJECT_CLASS = classPool.get(Object.name)
+    private static final def METAMETHOD_CLASS = classPool.get(MetaMethod.name)
+    private static final def CLOSURE_CLASS = classPool.get(Closure.name)
+    
     def doWithApplicationContext = { ctx ->
         def plugin = delegate
         application.domainClasses.each { dc ->
@@ -56,49 +65,91 @@ class GormInterceptorsGrailsPlugin {
         }
     }
 
-    private interceptMethod(method, beforeInvoke, afterInvoke, doInvoke) {
-        def paramTypes = method.nativeParameterTypes
+    private interceptMethod(method, beforeInvoke, afterInvoke, doInvoke) {        
+        // create closure at runtime
+        def className = "${method.declaringClass.theClass.name}_${method.name}_interceptor_${method.signature.hashCode()}"
+        def clazz = classPool.makeClass(className, CLOSURE_CLASS)
+        
+        ['beforeInvoke', 'afterInvoke', 'method', 'doInvoke'].each { clazz.addField(new CtField(METAMETHOD_CLASS, it, clazz)) }
+        
+        // add constructor
+        def constructor = new CtConstructor(([OBJECT_CLASS] + [METAMETHOD_CLASS] * 4) as CtClass[], clazz)
+        constructor.setBody("""
+{
+super(\$1);
+this.beforeInvoke = \$2;
+this.afterInvoke = \$3;
+this.method = \$4;
+this.doInvoke = \$5;
+}
+""")
+        clazz.addConstructor(constructor)
+        
+        // implement getParameterTypes
+        def m = new CtMethod(clazz.methods.find { it.name == 'getParameterTypes' }, clazz, null)
+        m.setBody("""
+{
+return method.getNativeParameterTypes();
+}
+""")
+        clazz.addMethod(m)
+        
+        // implement getMaximumNumberOfParameters
+        m = new CtMethod(clazz.methods.find { it.name == 'getMaximumNumberOfParameters' }, clazz, null)
+        m.setBody("""
+{
+return ${method.nativeParameterTypes?.size() ?: 0 };
+}
+""")
+        clazz.addMethod(m)
+        
+        // implement call(Object... args)
         def w = new StringWriter()
 
+        // do we have interceptors that want to inspect method parameters
+        def interceptorsWithParams = [beforeInvoke, afterInvoke, doInvoke].any { it?.nativeParameterTypes?.size() > 0 } 
         // create closure
-        w << '{ '
-        int i = 0
-        w << paramTypes.collect { "${it.name} a${i++}" }.join(', ')
-        i = 0
-        w << """ ->
-def result
-def args = ${'[' + paramTypes.collect { "a${i++}" }.join(', ') + '] as Object[]'}
+        w << """{
+Object result; 
+${interceptorsWithParams ? 'Object[] methodArgs = new Object[] { \$1 };' : ''}
 """
+        int i = 0
+        
         if (beforeInvoke) {
             w << """
 
-    result = beforeInvoke.invoke(delegate, beforeInvoke.nativeParameterTypes.size() > 0 ? [args] as Object[] : null)
+    result = beforeInvoke.invoke(getDelegate(), ${beforeInvoke.nativeParameterTypes?.size() > 0 ? 'methodArgs' : '(Object[])null'});
 
 """
         }
         if (doInvoke) {
             w << """
-    def invokeMethod = doInvoke.invoke(delegate, doInvoke.nativeParameterTypes.size() > 0 ? [args] as Object[] : null)
-    if (invokeMethod) {
-      result = method.invoke(delegate, args)
+    Object invokeMethod = doInvoke.invoke(getDelegate(), ${doInvoke.nativeParameterTypes?.size() > 0 ? 'methodArgs' : '(Object[])null'});
+    if (invokeMethod instanceof Boolean && ((Boolean)invokeMethod).equals(Boolean.TRUE)) {
+      result = method.invoke(getDelegate(), \$1);
     }
 """
         } else {
         w << """
-result = method.invoke(delegate, args)
+result = method.invoke(getDelegate(), \$1);
 """
         }
         if (afterInvoke) {
             w << """
-
-def resultAfterInvoke = afterInvoke.invoke(delegate, afterInvoke.nativeParameterTypes.size() > 0 ? [args, result] as Object[] : null)
-if (afterInvoke.returnType != Void.TYPE) result = resultAfterInvoke
+Object[] afterInvokeArgs = ${afterInvoke.nativeParameterTypes?.size() > 0 ? 'new Object[] { \$1, result }': 'null' };
+Object resultAfterInvoke = afterInvoke.invoke(getDelegate(), afterInvokeArgs);
+if (afterInvoke.getReturnType() != Void.TYPE) result = resultAfterInvoke;
 """
         }
         w << """
-            result
+            return result;
 }
 """
-        new GroovyShell(new Binding([beforeInvoke: beforeInvoke, afterInvoke: afterInvoke, doInvoke: doInvoke, method: method])).evaluate(w.toString())
+        m = new CtMethod(clazz.methods.find { it.name == 'call' && it.parameterTypes.size() == 1 && it.parameterTypes[0].isArray() }, clazz, null)
+        m.setBody(w.toString())
+        clazz.addMethod(m)
+        
+        // instantiate it
+        clazz.toClass().getConstructor(Object, MetaMethod, MetaMethod, MetaMethod, MetaMethod).newInstance(this, beforeInvoke, afterInvoke, method, doInvoke)
     }
 }

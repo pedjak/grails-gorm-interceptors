@@ -27,7 +27,8 @@ declared on a domain class:
 * gormAfterXXX
 * gormDoXXX
 
-where XXX is the name of the Gorm method we wish to intercept.
+where XXX is the name of the Gorm method we wish to intercept - all methods
+expect find*, countBy, addTo*, removeFrom* are supported.
 
 If we need to intercept a static Gorm method, then the interceptor methods
 must be declared as static as well.
@@ -127,4 +128,93 @@ the return value:
     static def gormAfterGet(args, result) {
       // replace result with something else
     }
+```
+# Examples
+
+## Adding/removing roles in spring security model
+
+Grails spring security plugin introduces the following model:
+
+```groovy
+   class User {
+   }
+
+   class Authority {
+   }
+
+   class UserAuthority {
+     User user
+     Authority role
+   }
+```
+
+Let's add 'admin' property to User - it will be rendered as a checkbox in a
+GUI form. However, setting/cleaning it should be translated into
+adding/removing a proper UserAuthority item. Trying to solve it via the
+Gorm afterInsert/afterUpdate event wont work - they are triggered at session
+flush which usually happens at its end where further database modifications are
+not allowed. A possible workaround is to perform these modifications in a
+new session, but this could lead to an inconsistent data, in case that actions
+performed in the original session must be rolled back, changes requested in
+the new session can still be persisted.
+
+Declaring an after interceptor on Gorm delete method solves the issue:
+
+```groovy
+   class User {
+     static transients = ['admin']
+     boolean admin
+
+     void gormAfterDelete() {
+       updateRoles()
+     }
+
+     private void updateRoles() {
+       def role = Authority.ADMIN
+       if (admin) {
+         UserAuthority.findByUserAndRole(this, role)?.delete()
+       } else {
+         new UserAuthority(user: this, role: role).save()
+       }
+     }
+   }
+```
+
+## Hiding domain object's source
+
+Sometimes is very useful to hide from the rest of the code the source of
+object, and to persist it only if it needs to be associated with some other
+entities. Imagine that you have a list of countries defined in an XML config
+file and the entity is modeled as follows:
+
+```groovy
+   class Country {
+     String id // iso code
+     String name
+   }
+```
+
+It would be good that the rest of the application does not know if entries
+are comming from database or not. You could make CountryService for that, but
+it would be more in the spirit of Gorm to define a few after interceptors:
+
+
+```groovy
+   class Country {
+     String id // iso code
+     String name
+
+     static def gormAfterList(args, result) {
+       // read all entries not appearing in result
+       // from the config file and return them all
+     }
+
+     static def gormAfterGet(args, result) {
+        if (!result) {
+           // result = get the entry from the config file using
+           // the provided key in args[0]
+        }
+        result
+     }
+   }
 ```

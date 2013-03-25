@@ -14,7 +14,7 @@ usually at the session end. This might be problematic, if you need to:
 created/modified objects will be invisible or having old values.
 
 * Modify DB state - you need to do it in a new session, outside
-trasaction that has triggered the interceptor at the first place. In case
+transaction that has triggered the interceptor at the first place. In case
 that the transaction needs to be rolled back, the changes done in the new
 session could be eventually persisted.
 
@@ -28,7 +28,7 @@ declared on a domain class:
 * gormDoXXX
 
 where XXX is the name of the Gorm method we wish to intercept - all methods
-expect find*, countBy, addTo*, removeFrom* are supported.
+except find*, countBy, addTo*, removeFrom* are supported.
 
 If we need to intercept a static Gorm method, then the interceptor methods
 must be declared as static as well.
@@ -75,7 +75,7 @@ or
 
 ## gormDoXXX
 
-It is optional and if declared, controls if the interecepted method will be
+It is optional and if declared, controls if the intercepted method will be
 invoked at all. Two declaration forms are possible:
 
 ```groovy
@@ -195,7 +195,7 @@ file and the entity is modeled as follows:
 ```
 
 It would be good that the rest of the application does not know if entries
-are comming from database or not. You could make CountryService for that, but
+are coming from database or not. You could make CountryService for that, but
 it would be more in the spirit of Gorm to define a few after interceptors:
 
 

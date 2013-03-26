@@ -6,21 +6,22 @@ import javassist.CtConstructor
 import javassist.CtClass
 
 class GormInterceptorsGrailsPlugin {
-    def version = "0.0.2-SNAPSHOT"
+    def version = "0.1"
     def grailsVersion = "1.2 > *"
     def loadAfter = ['domainClass', 'hibernate']
     def pluginExcludes = [
         "grails-app/domain/**"
     ]
 
+    def issueManagement = [system: 'github', url: 'https://github.com/pedjak/grails-gorm-interceptors/issues']
     def scm = [url: "http://github.com/pedjak/grails-gorm-interceptors"]
-    def documentation = "http://github.com/pedjak/grails-gorm-interceptors"
+    def documentation = "https://github.com/pedjak/grails-gorm-interceptors/blob/master/README.md"
     def licence = "APACHE"
 
     def author = "Predrag Knezevic"
     def authorEmail = "pedjak@gmail.com"
     def title = "GORM Interceptors Plugin"
-    def description = 'Interceptors for GORM methods (excluding queries)'
+    def description = 'Interceptors for GORM methods (excluding find*, countBy*, addTo*, removeFrom* methods)'
 
     private interceptorNamePattern = ~/gorm(Before|After)(.+)/
     private static final def classPool = ClassPool.default

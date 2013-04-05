@@ -4,9 +4,10 @@ import javassist.CtField
 import javassist.CtMethod
 import javassist.CtConstructor
 import javassist.CtClass
+import javassist.ClassClassPath
 
 class GormInterceptorsGrailsPlugin {
-    def version = "0.1"
+    def version = "0.1.1"
     def grailsVersion = "1.2 > *"
     def loadAfter = ['domainClass', 'hibernate']
     def pluginExcludes = [
@@ -24,10 +25,19 @@ class GormInterceptorsGrailsPlugin {
     def description = 'Interceptors for GORM methods (excluding find*, countBy*, addTo*, removeFrom* methods)'
 
     private interceptorNamePattern = ~/gorm(Before|After)(.+)/
-    private static final def classPool = ClassPool.default
-    private static final def OBJECT_CLASS = classPool.get(Object.name)
-    private static final def METAMETHOD_CLASS = classPool.get(MetaMethod.name)
-    private static final def CLOSURE_CLASS = classPool.get(Closure.name)
+    private def OBJECT_CLASS = classPool.get(Object.name)
+    private def METAMETHOD_CLASS = classPool.get(MetaMethod.name)
+    private def CLOSURE_CLASS = classPool.get(Closure.name)
+    
+    private def _classPool    
+    
+    private def getClassPool() {
+        if (_classPool == null) {
+            _classPool = ClassPool.default
+            _classPool.insertClassPath(new ClassClassPath(GormInterceptorsGrailsPlugin))
+        }   
+        _classPool 
+    }
     
     def doWithApplicationContext = { ctx ->
         def plugin = delegate

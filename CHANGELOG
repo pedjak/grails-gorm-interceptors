@@ -1,0 +1,5 @@
+0.1.1
+  fixed: the deployment as WAR was broken
+
+0.1
+  initial release
